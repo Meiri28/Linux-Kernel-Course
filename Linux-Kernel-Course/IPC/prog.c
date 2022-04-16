@@ -6,9 +6,17 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/ipc.h>
 
 #define SELF "./a.out"
 #define MAX_DIRECTORY_NAME_LENGTH 255
+
+struct word_count_massage
+{
+	long mtype;
+	int number_of_words;
+};
 
 int read_int_from_fd(int fd) {
 	int result = 0;
@@ -21,37 +29,70 @@ int read_int_from_fd(int fd) {
 	return result;
 }
 
+int run_wc_and_get_result(char* path) {
+	int pfds[2];
+	if (pipe(pfds) != 0)
+		printf("pipe error\n");
+	int pid = fork();
+	if (pid == 0) {
+		close(1);
+		dup(pfds[1]);
+		execl("/usr/bin/wc", "/usr/bin/wc", "-w", path, NULL);
+		printf("failed to execl %d\n", errno);
+		fflush(stdout);
+	}
+	wait(NULL);
+	int result = read_int_from_fd(pfds[0]);
+	close(pfds[0]);
+	close(pfds[1]);
+	
+	return result;
+}
+
 int create_child(char* path)
 {
 	struct stat path_stat;
 	stat(path, &path_stat);
-	int pfds[2];
-	pipe(pfds);
+	char father[20];
+	sprintf(father, "%d", getpid());
 	int pid = fork();
 	//check if child
 	if (pid == 0) {
-		if (S_ISREG(path_stat.st_mode)) {
-			close(1);
-			dup(pfds[1]);
-			
-			execl("/bin/wc", "/bin/wc", "-w", path);
-		}
-		else if (S_ISDIR(path_stat.st_mode))
-			execl(SELF, SELF, path);
-		
+		execl(SELF, SELF, path, father);
+
 		printf("failed %d\n", errno);
 		exit(1);
 	}
-
-	printf("number of word %d \n", read_int_from_fd(pfds[0]));
+	wait(NULL);
+	// if father
+	/*if (S_ISREG(path_stat.st_mode)) {
+		char current = '0';
+		while (current != '1') {
+			sleep(0);
+			read(pfds[0], &current, 1);
+		}
+	}
+	else if (S_ISDIR(path_stat.st_mode)) {
+		
+	}*/
 
 	return pid;
 }
 
 int main(int argc, char * argv[]) {
-	printf("%s %s\n", argv[0], argv[1]);
+	key_t massage_queue_key = ftok("./message_queue", 'b');
+	int massage_queue;
+	//root process
+	if (argc == 2) {
+		massage_queue = msgget(massage_queue_key, 0666 | IPC_CREAT);
+	}
+	else {
+		massage_queue = msgget(massage_queue_key, 0666 | IPC_EXCL);
+	}
+
 	struct stat file_stat;
 	stat(argv[1], &file_stat);
+	sleep(0);
 	
 	// IS DIR
 	if (S_ISDIR(file_stat.st_mode)) {
@@ -69,7 +110,6 @@ int main(int argc, char * argv[]) {
 			strcat(full_path, "/");
 			strcat(full_path, dp->d_name);
 			create_child(full_path);
-			
 			dp = readdir(current_dir);
 		}
 
@@ -78,22 +118,23 @@ int main(int argc, char * argv[]) {
 	}
 	// IS REGULAR FILE
 	else if (S_ISREG(file_stat.st_mode)) {
-		//printf("%s\n", argv[1]);
+		struct word_count_massage massage = { 1, run_wc_and_get_result(argv[1]) };
+		int return_code = msgsnd(massage_queue, &massage, sizeof(massage), 0);
+		// tell father that you sent the first process the data he need and now you wait for final result from him.
+		signal(SIGCONT, atoi(argv[2]));
 	}
-		
-	//switch (file_stat.st_mode)
-	//{
-	//case S_IFMT:
-	//	printf("file");
-	//	break;
-	//case S_IFDIR:
-	//	printf("directory");
-	//	break;
-	//default:
-	//	printf("UNKNOWN");
-	//	break;
-	//}
 
+	if (argc == 2) {
+		struct word_count_massage massage;
+		int count = 0;
+		while (msgrcv(massage_queue, &massage, sizeof(massage), 0, IPC_NOWAIT) > 0) {
+			printf("file with %d words\n", massage.number_of_words);
+			count++;
+		}
+		printf("got %d massages errno %d\n", count, errno);
+	}
+
+	fflush(stdout);
 	return 0;
 }
 
