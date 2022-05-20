@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <fcntl.h>
 
 #define MAX_HTTP_HEADER_SIZE 4096
 
@@ -144,7 +143,7 @@ int get_fd_from_request(char* request)
 
 void get_command() {
 	char* line = NULL;
-	int size;
+	int size = 0;
 	getline(&line, &size, stdin);
 	if (strncmp(line, "show", sizeof(char) * strlen("show")) == 0) {
 		show();

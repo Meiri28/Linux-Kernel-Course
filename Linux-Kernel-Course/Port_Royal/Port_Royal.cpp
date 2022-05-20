@@ -8,26 +8,56 @@
 #include <netdb.h>
 #include <iostream>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <poll.h>
 
 Port_Royal::Port_Royal() : m_socket_to_listen(open_port_and_listen()) {}
 
 void Port_Royal::execute() 
 {
-    struct sockaddr_in their_addr;
-    socklen_t addr_size = sizeof(their_addr);
-    int new_fd = accept(m_socket_to_listen.get(), (struct sockaddr*)&their_addr, &addr_size);
-    std::cout << "accepted connection from " << inet_ntoa(their_addr.sin_addr) << std::endl;
-    std::string command = "run echo hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello worldhello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world ";
-    
-    common::send_to_socket(new_fd, command);
-    std::string a = common::get_from_socket(new_fd);
-    std::cout << "got from jack " << a << std::endl;
+    std::vector<Client> clients;
+    struct pollfd poll_request[2];
+    poll_request[0].fd = 0; //stdin
+    poll_request[1].fd = m_socket_to_listen.get();
+    poll_request[0].events = POLLIN;
+    poll_request[1].events = POLLIN;
+    fcntl(poll_request[0].fd, F_SETFL, O_NONBLOCK);
+    fcntl(poll_request[1].fd, F_SETFL, O_NONBLOCK);
+    while (true)
+    {
+        poll(poll_request, 2, -1);
+        if (poll_request[0].revents == POLLIN) { // get command from user
+            char* line = NULL;
+            size_t size = 0;
+
+            getline(&line, &size, stdin);
+            std::string command = line;
+            free(line);
+            command.pop_back(); // pop \n
+            if ( command == "show") {
+                for (int i = 0; i < clients.size(); i++) {
+                    std::cout << i << " " << clients.at(i).get_ip() << std::endl;
+                }
+            }
+            else try {
+                int target = std::stoi(command);
+                clients.at(target).send_command(command.substr(command.find(' ') + 1, command.length()));
+            }
+            catch (const std::exception& ex) {
+                std::cout << "invalid command " << ex.what() << std::endl;
+            }
+        }
+        if (poll_request[1].revents == POLLIN) // connect client
+        {
+            clients.emplace_back(std::move(m_socket_to_listen.get()));
+        }
+    }
 }
 
 int Port_Royal::open_port_and_listen()
 {
     struct addrinfo hints, * res;
-    int sockfd, new_fd;
+    int sockfd;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC; // use IPv4 or IPv6, whichever

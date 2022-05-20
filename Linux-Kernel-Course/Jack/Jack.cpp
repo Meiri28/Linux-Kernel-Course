@@ -54,8 +54,11 @@ std::string Jack::run_shell(const std::string& command)
 	int pid = fork();
 	if(pid == 0)
 	{
-		//close stdout
+		//close std out
 		close(1);
+		//close std error
+		close(2);
+		dup(pfds[1]);
 		dup(pfds[1]);
 		close(pfds[0]);
 		close(pfds[1]);
@@ -63,7 +66,7 @@ std::string Jack::run_shell(const std::string& command)
 	}
 	//wait for child process to end
 	close(pfds[1]);
-	wait(nullptr);
+	waitpid(pid,nullptr,0);
 	std::string buffer(100, '\0');
 	while (read(pfds[0], const_cast<char*>(buffer.data()) + buffer.find('\0') , buffer.length() - buffer.find('\0'))) {
 		buffer.resize(buffer.length() + 100);
