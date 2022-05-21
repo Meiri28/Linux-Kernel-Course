@@ -87,13 +87,11 @@
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="Base_FD.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Port_Royal.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Base_FD.hpp" />
     <ClInclude Include="Client.hpp" />
     <ClInclude Include="Port_Royal.hpp" />
   </ItemGroup>

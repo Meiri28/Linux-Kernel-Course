@@ -91,10 +91,14 @@
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="Base_FD.hpp" />
     <ClInclude Include="Common.hpp" />
+    <ClInclude Include="File.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Base_FD.cpp" />
     <ClCompile Include="Common.cpp" />
+    <ClCompile Include="File.cpp" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

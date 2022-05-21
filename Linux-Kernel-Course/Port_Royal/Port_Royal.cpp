@@ -44,7 +44,7 @@ void Port_Royal::execute()
                 clients.at(target).send_command(command.substr(command.find(' ') + 1, command.length()));
             }
             catch (const std::exception& ex) {
-                std::cout << "invalid command " << ex.what() << std::endl;
+                std::cout << "invalid command " << std::endl;
             }
         }
         if (poll_request[1].revents == POLLIN) // connect client

@@ -12,9 +12,21 @@
     <ClCompile Include="Common.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="File.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Base_FD.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="File.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Base_FD.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
