@@ -23,10 +23,10 @@ int Client::get_socket()
     return m_client_socket.get();
 }
 
-void Client::send_command(const std::string& command) 
+std::string Client::send_command(const std::string& command) 
 {
     common::send_to_socket(m_client_socket.get(), command);
-    std::cout << common::get_from_socket(m_client_socket.get()) << std::endl;
+    return common::get_from_socket(m_client_socket.get());
 }
 
 std::string Client::get_ip()

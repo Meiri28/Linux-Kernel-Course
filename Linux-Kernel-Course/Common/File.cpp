@@ -6,7 +6,7 @@
 #include <iostream>
 #include <unistd.h>
 
-File::File(const std::string& file_path) : m_fd(open(file_path.data(), O_RDWR)) {
+File::File(const std::string& file_path) : m_fd(open(file_path.data(), O_RDWR | O_CREAT, S_IRWXU)) {
     if (m_fd.get() == -1) {
         std::cout << "open error " << file_path << std::endl;
     }
@@ -29,6 +29,9 @@ void File::write_data(const std::string& data)
     int written = 0;
     while (written < data.length())
     {
-        written += write(m_fd.get(), data.data() + written, data.length() - written);
+        const int write_return_value = write(m_fd.get(), data.data() + written, data.length() - written);
+        if (write_return_value == -1)
+            std::cout << "write error " << errno << std::endl;
+        written += write_return_value;
     }
 }

